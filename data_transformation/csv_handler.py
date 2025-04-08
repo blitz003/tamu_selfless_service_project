@@ -1,7 +1,7 @@
 import csv
 import os
 from datetime import datetime
-from data_transformation.constants import base_csv_directory
+from .constants import base_csv_directory
 from tkinter import Tk, filedialog
 
 class MissingHeaderException(Exception):
@@ -46,8 +46,9 @@ class CSVHandler:
 
         if file_path:
             print(f"Selected file: {file_path}")
-            self.ala_file_name = os.path.basename(file_path)  # Save the file name to a variable
-            self.ala_file_name_suffix = self.ala_file_name[:-4][-6:]  # Last 6 characters, excluding .csv (i.e. "ML ALA")
+            self.file_name = os.path.basename(file_path)  # Save the file name to a variable
+            year = self.file_name[:-8] # excluding "_RAW.csv"
+            self.file_name_suffix = year + "_CLEAN"
             return file_path
         else:
             raise FileNotFoundError("No CSV file was selected. The program will now close.")

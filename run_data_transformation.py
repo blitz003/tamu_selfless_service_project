@@ -98,8 +98,14 @@ except Exception as e:
     print(f"An unexpected error occurred: {e}")
     sys.exit(1)
 
-
-output_records = []
+# Define your headers
+headers = [
+    "Title", "First Name", "Middle Name", "Last Name", "Suffix",
+    "Organization", "Home Address", "Home City", "Home State",
+    "Home Zip Code", "Phone1", "Phone 2", "Email", "Date",
+    "Amount", "Fund", "Campaign", "Appeal", "Method"
+]
+output_records = [headers]
 
 try:
     for index, row in enumerate(records):
@@ -108,6 +114,11 @@ try:
 
         # 1) Full name
         raw_fullname = str(row.get("Name")).strip().lower()
+        unknown = ["anonymous", "unknown", "annonomus", "annomous",
+                   "anonumus", "annomunus", "cash donation"]
+        # We do not want anonymous donations in the donor management system
+        if any(keyword in raw_fullname for keyword in unknown):
+            continue
         print(f"Debug: raw_fullname='{raw_fullname}'")
 
         # Assign output_variable
@@ -116,7 +127,13 @@ try:
         # 2) Check if organization
         org_keywords = ["church", "fellow", "frat", "fraternity",
                         "foundation", "llc", "bcs", "club",
-                        "agency", "firm"]
+                        "agency", "firm", "plumbing", "bible",
+                        "sales", "baptist", "brazos valley",
+                        "college", "school", "vanguard", "luke bryans",
+                        "kroger", "aggieland", "automotive", "studio",
+                        "inc", "inc.", "charitable", "beginnings",
+                        "class", "chi", "enterprise", "company",
+                        "investment", "offices"]
 
         if any(keyword in raw_fullname for keyword in org_keywords):
             raw_organization = raw_fullname
@@ -190,8 +207,8 @@ try:
         # Make sure to handle blank names
         if output_last_name or output_first_name:
             boolean_person_exists = database_conn.query_for_match_by_name(output_last_name, output_first_name)
-        if not boolean_person_exists and output_organization:
-            boolean_organization_exists = database_conn.query_for_match_by_name(raw_organization, raw_organization)
+        if output_organization:
+            boolean_organization_exists = database_conn.query_for_match_by_name(output_organization, output_organization)
 
         print(f"Debug: boolean_person_exists={boolean_person_exists}, boolean_organization_exists={boolean_organization_exists}")
 
@@ -237,7 +254,7 @@ try:
         if boolean_person_exists:
             output_phone1 = database_conn.query_for_phone(output_last_name, output_first_name)
         else:
-            # originally address_tokens[2], but that might be out of range
+        # originally address_tokens[2], but that might be out of range
             output_phone1 = ""
         if boolean_organization_exists:
             output_phone1 = database_conn.query_for_phone(output_organization, output_organization)
@@ -250,6 +267,14 @@ try:
             output_email = database_conn.query_for_email(output_last_name, output_first_name)
         else:
             output_email = ""
+        if boolean_organization_exists:
+            output_email = database_conn.query_for_email(output_organization, output_organization)
+        else:
+            pass
+
+
+        output_phone2 = ""
+
 
         # 14) Date
         try:
@@ -306,7 +331,7 @@ try:
 
     # Write the log to a CSV file
     try:
-        csv_writer.write_csv(output_records, filename_suffix="2021_RAW")
+        csv_writer.write_csv(output_records, filename_suffix=csv_handler.file_name_suffix)
         print(f"Writing out to {csv_writer.output_directory}")
     except Exception as e:
         print(f"Failed to write output log. Error: {str(e)}")
